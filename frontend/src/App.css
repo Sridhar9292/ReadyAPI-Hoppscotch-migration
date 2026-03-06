@@ -296,9 +296,162 @@ body {
 }
 .btn-secondary:hover { background: var(--border); }
 
+/* ── Tabs ── */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 12px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 18px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--text); }
+.tab-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-count {
+  font-size: 0.72rem;
+  background: var(--border);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-weight: 600;
+}
+.tab-active .tab-count {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.tab-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+/* ── Environment cards ── */
+.env-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.env-card {
+  border-bottom: 1px solid var(--border);
+}
+.env-card:last-child { border-bottom: none; }
+
+.env-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: background 0.15s;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.env-card-header:hover { background: var(--surface2); }
+
+.env-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.env-chevron { color: var(--text-muted); font-size: 0.9rem; width: 14px; }
+.env-name { font-weight: 600; font-size: 0.95rem; }
+.env-var-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.env-card-actions { display: flex; gap: 8px; }
+
+.btn-sm { padding: 5px 12px; font-size: 0.78rem; }
+
+/* ── Variables table ── */
+.env-table-wrap {
+  padding: 0 20px 16px;
+  background: var(--bg);
+}
+
+.env-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.env-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+
+.env-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.env-table tr:last-child td { border-bottom: none; }
+
+.env-key {
+  font-family: var(--mono);
+  color: #7ee7f8;
+  font-size: 0.8rem;
+}
+
+.env-val {
+  font-family: var(--mono);
+  color: #a5d6a7;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.env-empty-val { color: var(--text-muted); font-family: var(--font); }
+
+.env-empty {
+  padding: 24px 20px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .viewer-header { flex-direction: column; align-items: flex-start; }
   .stats-bar { flex-direction: column; }
   .stat { flex-direction: row; justify-content: space-between; border-right: none; border-bottom: 1px solid var(--border); }
+  .env-card-header { flex-direction: column; align-items: flex-start; }
+  .tab-meta { margin-left: 0; }
 }

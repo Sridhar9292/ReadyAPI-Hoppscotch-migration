@@ -133,6 +133,7 @@ export default function App() {
           {result && !loading && (
             <JsonViewer
               data={result.collection}
+              environments={result.environments || []}
               truncated={result.truncated}
               mode={result.mode}
             />
@@ -141,7 +142,10 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        <p>Import the downloaded JSON directly into Hoppscotch → Collections → Import → From JSON</p>
+        <p>
+          Collection → Hoppscotch &gt; Collections &gt; Import &gt; From JSON &nbsp;|&nbsp;
+          Environments → Hoppscotch &gt; Environments &gt; Import &gt; From JSON
+        </p>
       </footer>
     </div>
   );

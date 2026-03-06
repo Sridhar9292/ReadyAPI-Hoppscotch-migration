@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project
+    xmlns:con="http://eviware.com/soapui/config"
+    id="sample-project-001"
+    name="Public API Test Suite"
+    soapui-version="5.7.0"
+    abortOnError="false"
+    runType="SEQUENTIAL"
+    resourceRoot=""
+    activeEnvironment="DEV">
+
+  <con:settings/>
+
+  <!-- ═══════════════════════════════════════════════════
+       Project-level properties (default values)
+       Override per environment below via <con:environments>
+  ═══════════════════════════════════════════════════ -->
+  <con:properties>
+    <con:property>
+      <con:name>baseUrl</con:name>
+      <con:value>https://jsonplaceholder.typicode.com</con:value>
+    </con:property>
+    <con:property>
+      <con:name>apiVersion</con:name>
+      <con:value>v1</con:value>
+    </con:property>
+    <con:property>
+      <con:name>authToken</con:name>
+      <con:value>dev-token-placeholder</con:value>
+    </con:property>
+  </con:properties>
+
+  <!-- ═══════════════════════════════════════════════════
+       Environments: DEV and QA
+       Switch active env from the ReadyAPI toolbar
+  ═══════════════════════════════════════════════════ -->
+  <con:environments>
+
+    <con:environment name="DEV">
+      <con:properties>
+        <con:property>
+          <con:name>baseUrl</con:name>
+          <con:value>https://jsonplaceholder.typicode.com</con:value>
+        </con:property>
+        <con:property>
+          <con:name>apiVersion</con:name>
+          <con:value>v1</con:value>
+        </con:property>
+        <con:property>
+          <con:name>authToken</con:name>
+          <con:value>dev-token-placeholder</con:value>
+        </con:property>
+        <con:property>
+          <con:name>userId</con:name>
+          <con:value>1</con:value>
+        </con:property>
+        <con:property>
+          <con:name>postId</con:name>
+          <con:value>1</con:value>
+        </con:property>
+      </con:properties>
+    </con:environment>
+
+    <con:environment name="QA">
+      <con:properties>
+        <con:property>
+          <con:name>baseUrl</con:name>
+          <con:value>https://jsonplaceholder.typicode.com</con:value>
+        </con:property>
+        <con:property>
+          <con:name>apiVersion</con:name>
+          <con:value>v1</con:value>
+        </con:property>
+        <con:property>
+          <con:name>authToken</con:name>
+          <con:value>qa-token-placeholder</con:value>
+        </con:property>
+        <con:property>
+          <con:name>userId</con:name>
+          <con:value>2</con:value>
+        </con:property>
+        <con:property>
+          <con:name>postId</con:name>
+          <con:value>5</con:value>
+        </con:property>
+      </con:properties>
+    </con:environment>
+
+  </con:environments>
+
+  <!-- ═══════════════════════════════════════════════════
+       Test Suite 1: Posts API
+       Endpoints use ${#Project#baseUrl} — resolved at
+       runtime from the active environment.
+  ═══════════════════════════════════════════════════ -->
+  <con:testSuite name="Posts API" runType="SEQUENTIAL">
+    <con:settings/>
+
+    <!-- Test Case: Read Operations -->
+    <con:testCase name="Read Operations" failOnError="true" keepSession="false">
+      <con:settings/>
+
+      <con:testStep type="httprequest" name="Get All Posts">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-001" name="Get All Posts">
+            <con:endpoint>${#Project#baseUrl}/posts</con:endpoint>
+            <con:method>GET</con:method>
+            <con:headers>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+      <con:testStep type="httprequest" name="Get Post By ID">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-002" name="Get Post By ID">
+            <con:endpoint>${#Project#baseUrl}/posts/${#Project#postId}</con:endpoint>
+            <con:method>GET</con:method>
+            <con:headers>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+      <con:testStep type="httprequest" name="Get Posts By User">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-003" name="Get Posts By User">
+            <con:endpoint>${#Project#baseUrl}/posts?userId=${#Project#userId}</con:endpoint>
+            <con:method>GET</con:method>
+            <con:headers>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+    </con:testCase>
+
+    <!-- Test Case: Write Operations -->
+    <con:testCase name="Write Operations" failOnError="true" keepSession="false">
+      <con:settings/>
+
+      <con:testStep type="httprequest" name="Create Post">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-004" name="Create Post">
+            <con:endpoint>${#Project#baseUrl}/posts</con:endpoint>
+            <con:method>POST</con:method>
+            <con:headers>
+              <con:entry key="Content-Type" value="application/json"/>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+            <con:requestContent>{"title": "foo", "body": "bar", "userId": ${#Project#userId}}</con:requestContent>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+      <con:testStep type="httprequest" name="Update Post">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-005" name="Update Post">
+            <con:endpoint>${#Project#baseUrl}/posts/${#Project#postId}</con:endpoint>
+            <con:method>PUT</con:method>
+            <con:headers>
+              <con:entry key="Content-Type" value="application/json"/>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+            <con:requestContent>{"id": ${#Project#postId}, "title": "updated title", "body": "updated body", "userId": ${#Project#userId}}</con:requestContent>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+      <con:testStep type="httprequest" name="Patch Post Title">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-006" name="Patch Post Title">
+            <con:endpoint>${#Project#baseUrl}/posts/${#Project#postId}</con:endpoint>
+            <con:method>PATCH</con:method>
+            <con:headers>
+              <con:entry key="Content-Type" value="application/json"/>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+            <con:requestContent>{"title": "patched title"}</con:requestContent>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+      <con:testStep type="httprequest" name="Delete Post">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-007" name="Delete Post">
+            <con:endpoint>${#Project#baseUrl}/posts/${#Project#postId}</con:endpoint>
+            <con:method>DELETE</con:method>
+            <con:headers>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+    </con:testCase>
+  </con:testSuite>
+
+  <!-- ═══════════════════════════════════════════════════
+       Test Suite 2: Users API
+  ═══════════════════════════════════════════════════ -->
+  <con:testSuite name="Users API" runType="SEQUENTIAL">
+    <con:settings/>
+
+    <con:testCase name="User Queries" failOnError="true" keepSession="false">
+      <con:settings/>
+
+      <con:testStep type="httprequest" name="Get All Users">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-008" name="Get All Users">
+            <con:endpoint>${#Project#baseUrl}/users</con:endpoint>
+            <con:method>GET</con:method>
+            <con:headers>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+      <con:testStep type="httprequest" name="Get User By ID">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-009" name="Get User By ID">
+            <con:endpoint>${#Project#baseUrl}/users/${#Project#userId}</con:endpoint>
+            <con:method>GET</con:method>
+            <con:headers>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+      <con:testStep type="httprequest" name="Get Todos For User">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-010" name="Get Todos For User">
+            <con:endpoint>${#Project#baseUrl}/todos?userId=${#Project#userId}&amp;completed=false</con:endpoint>
+            <con:method>GET</con:method>
+            <con:headers>
+              <con:entry key="Accept" value="application/json"/>
+              <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
+            </con:headers>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+    </con:testCase>
+  </con:testSuite>
+
+  <!-- Required project-level containers -->
+  <con:wssContainer/>
+  <con:oAuth2ProfileContainer/>
+  <con:oAuth1ProfileContainer/>
+
+</con:soapui-project>
