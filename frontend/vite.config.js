@@ -7,6 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/convert": "http://localhost:8000",
+      "/download-zip": "http://localhost:8000",
       "/health": "http://localhost:8000",
     },
   },

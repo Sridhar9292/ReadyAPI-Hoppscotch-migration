@@ -31,10 +31,11 @@ function downloadJson(data, filename) {
   URL.revokeObjectURL(url);
 }
 
-export default function JsonViewer({ data, environments = [], truncated, mode }) {
+export default function JsonViewer({ data, environments = [], truncated, mode, uploadedFile, selectedMode, apiBase }) {
   const [activeTab, setActiveTab] = useState("collection");
   const [copiedCollection, setCopiedCollection] = useState(false);
   const [copiedEnvIdx, setCopiedEnvIdx] = useState(null);
+  const [downloadingZip, setDownloadingZip] = useState(false);
 
   const collectionJson = JSON.stringify(data, null, 2);
 
@@ -58,6 +59,36 @@ export default function JsonViewer({ data, environments = [], truncated, mode })
     });
   };
 
+  const handleDownloadZip = async () => {
+    if (!uploadedFile) return;
+    setDownloadingZip(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", uploadedFile);
+      const res = await fetch(`${apiBase}/download-zip?mode=${selectedMode}`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error: ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      a.download = match ? match[1] : "hoppscotch.zip";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to download ZIP: " + err.message);
+    } finally {
+      setDownloadingZip(false);
+    }
+  };
+
   return (
     <div className="viewer-section">
       {/* ── Tab bar ── */}
@@ -78,6 +109,14 @@ export default function JsonViewer({ data, environments = [], truncated, mode })
         </button>
 
         <div className="tab-meta">
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleDownloadZip}
+            disabled={downloadingZip || !uploadedFile}
+            title="Download collection + environments as a single ZIP file"
+          >
+            {downloadingZip ? "Downloading…" : "⬇ Download All (ZIP)"}
+          </button>
           <span className="mode-used-badge">
             {mode === "openai" ? "🤖 OpenAI" : "⚙ Parser"}
           </span>

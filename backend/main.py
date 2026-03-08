@@ -1,10 +1,12 @@
 import os
+import io
 import json
 import re
+import zipfile
 import xml.etree.ElementTree as ET
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -392,6 +394,70 @@ async def convert_xml_to_hoppscotch(
         "collection": collection,
         "environments": environments,
     })
+
+
+@app.post("/download-zip")
+async def download_zip(
+    file: UploadFile = File(...),
+    mode: str = Query(default="auto", description="'auto' | 'parser' | 'openai'"),
+):
+    """Convert XML and return a ZIP containing collection.json + environment JSON files."""
+    if not file.filename.endswith(".xml"):
+        raise HTTPException(status_code=400, detail="Only .xml files are accepted.")
+
+    try:
+        content = await file.read()
+        xml_content = content.decode("utf-8")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read file: {str(e)}")
+
+    if not xml_content.strip():
+        raise HTTPException(status_code=400, detail="Uploaded XML file is empty.")
+
+    resolved_mode = mode
+    if mode == "auto":
+        resolved_mode = "openai" if openai_client else "parser"
+
+    if resolved_mode == "openai":
+        if not openai_client:
+            raise HTTPException(
+                status_code=400,
+                detail="OpenAI mode requested but OPENAI_API_KEY is not configured. Use mode=parser.",
+            )
+        try:
+            collection, environments, truncated = convert_with_openai(xml_content)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"OpenAI API error: {str(e)}")
+    else:
+        try:
+            collection, environments = parse_readyapi_xml(xml_content)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    # Build ZIP in memory
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        collection_name = collection.get("name", "hoppscotch-collection")
+        zf.writestr(
+            f"{collection_name}.json",
+            json.dumps(collection, indent=2),
+        )
+        for env in environments:
+            env_name = env.get("name", "environment")
+            zf.writestr(
+                f"{env_name}.json",
+                json.dumps(env, indent=2),
+            )
+    zip_buffer.seek(0)
+
+    safe_name = re.sub(r'[^\w\s\-]', '', collection.get("name", "hoppscotch")).strip() or "hoppscotch"
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name}.zip"',
+        },
+    )
 
 
 if __name__ == "__main__":

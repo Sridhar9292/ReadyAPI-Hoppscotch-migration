@@ -11,6 +11,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [modes, setModes] = useState({ modes: ["parser"], default: "parser" });
   const [selectedMode, setSelectedMode] = useState("auto");
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   // Fetch available modes from backend on mount
   useEffect(() => {
@@ -29,6 +30,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setUploadedFile(file);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -136,6 +138,9 @@ export default function App() {
               environments={result.environments || []}
               truncated={result.truncated}
               mode={result.mode}
+              uploadedFile={uploadedFile}
+              selectedMode={selectedMode}
+              apiBase={API_BASE}
             />
           )}
         </div>
