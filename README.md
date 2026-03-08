@@ -48,7 +48,7 @@ cp .env.example .env
 # Edit .env and add your OPENAI_API_KEY
 
 # Start the server
-uvicorn main:app --reload --port 8000
+python main.py
 ```
 
 The API will be available at `http://localhost:8000`.
@@ -69,16 +69,6 @@ npm run dev
 ```
 
 Open `http://localhost:5173` in your browser.
-
----
-
-## Usage
-
-1. Click or drag-and-drop your ReadyAPI `.xml` regression test suite file.
-2. The app uploads it to the backend, which sends it to OpenAI.
-3. The generated Hoppscotch collection JSON is displayed with syntax highlighting.
-4. Click **Download JSON** to save the file.
-5. In Hoppscotch, go to **Collections → Import → From JSON** and import the file.
 
 ---
 
