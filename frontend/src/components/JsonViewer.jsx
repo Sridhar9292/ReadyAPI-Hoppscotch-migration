@@ -26,6 +26,9 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
   const [copiedCollection, setCopiedCollection] = useState(false);
   const [copiedEnvIdx, setCopiedEnvIdx] = useState(null);
   const [downloadingZip, setDownloadingZip] = useState(false);
+  const [runningCli, setRunningCli] = useState(false);
+  const [cliResult, setCliResult] = useState(null);
+  const [selectedEnvIndex, setSelectedEnvIndex] = useState(0);
 
   const collectionJson = JSON.stringify([data], null, 2);
 
@@ -73,6 +76,30 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
     }
   };
 
+  const handleRunCli = async () => {
+    if (!uploadedFile) return;
+    setRunningCli(true);
+    setCliResult(null);
+    setActiveTab("testResults");
+    try {
+      const formData = new FormData();
+      formData.append("file", uploadedFile);
+      const res = await fetch(
+        `${apiBase}/run-cli?mode=${selectedMode}&env_index=${selectedEnvIndex}`,
+        { method: "POST", body: formData }
+      );
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.detail || `Server error: ${res.status}`);
+      }
+      setCliResult(json);
+    } catch (err) {
+      setCliResult({ success: false, stdout: "", stderr: err.message, exit_code: -1 });
+    } finally {
+      setRunningCli(false);
+    }
+  };
+
   return (
     <div className="viewer-section">
       {/* ── Tab bar ── */}
@@ -91,6 +118,17 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
           Environments
           <span className="tab-count">{environments.length}</span>
         </button>
+        <button
+          className={`tab ${activeTab === "testResults" ? "tab-active" : ""}`}
+          onClick={() => setActiveTab("testResults")}
+        >
+          Test Results
+          {cliResult && (
+            <span className={`tab-count ${cliResult.success ? "tab-count-success" : "tab-count-error"}`}>
+              {cliResult.success ? "PASS" : "FAIL"}
+            </span>
+          )}
+        </button>
 
         <div className="tab-meta">
           <button
@@ -99,14 +137,22 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
             disabled={downloadingZip || !uploadedFile}
             title="Download collection + environments as a single ZIP file"
           >
-            {downloadingZip ? "Downloading…" : "⬇ Download All (ZIP)"}
+            {downloadingZip ? "Downloading..." : "Download ZIP"}
+          </button>
+          <button
+            className="btn btn-run btn-sm"
+            onClick={handleRunCli}
+            disabled={runningCli || !uploadedFile}
+            title="Run Hoppscotch CLI tests against this collection"
+          >
+            {runningCli ? "Running..." : "Run Tests"}
           </button>
           <span className="mode-used-badge">
-            {mode === "openai" ? "🤖 OpenAI" : "⚙ Parser"}
+            {mode === "openai" ? "OpenAI" : "Parser"}
           </span>
           {truncated && (
             <span className="truncation-badge" title="Large XML was truncated to fit model limits">
-              ⚠ Partial (XML truncated)
+              Partial (XML truncated)
             </span>
           )}
         </div>
@@ -119,7 +165,7 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
             <h2 className="viewer-title">Hoppscotch Collection</h2>
             <div className="viewer-actions">
               <button className="btn btn-secondary" onClick={handleCopyCollection}>
-                {copiedCollection ? "✓ Copied" : "Copy JSON"}
+                {copiedCollection ? "Copied" : "Copy JSON"}
               </button>
             </div>
           </div>
@@ -170,6 +216,86 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
           )}
         </>
       )}
+
+      {/* ── Test Results tab ── */}
+      {activeTab === "testResults" && (
+        <>
+          <div className="viewer-header">
+            <h2 className="viewer-title">Hoppscotch CLI Test Results</h2>
+            <div className="viewer-actions">
+              {environments.length > 0 && (
+                <div className="env-selector">
+                  <label className="env-selector-label">Environment:</label>
+                  <select
+                    className="env-selector-select"
+                    value={selectedEnvIndex}
+                    onChange={(e) => setSelectedEnvIndex(Number(e.target.value))}
+                  >
+                    {environments.map((env, idx) => (
+                      <option key={idx} value={idx}>{env.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <button
+                className="btn btn-run"
+                onClick={handleRunCli}
+                disabled={runningCli || !uploadedFile}
+              >
+                {runningCli ? "Running..." : "Re-run Tests"}
+              </button>
+            </div>
+          </div>
+
+          {runningCli && (
+            <div className="cli-loading">
+              <div className="spinner" />
+              <div>
+                <p className="status-title">Running hopp test...</p>
+                <p className="status-sub">Executing Hoppscotch CLI against the generated collection</p>
+              </div>
+            </div>
+          )}
+
+          {!runningCli && !cliResult && (
+            <div className="cli-empty">
+              <p>Click <strong>Run Tests</strong> to execute the Hoppscotch CLI against the generated collection.</p>
+              <p className="status-sub">This will run <code>hopp test</code> with the collection and selected environment.</p>
+            </div>
+          )}
+
+          {!runningCli && cliResult && (
+            <div className="cli-result">
+              <div className={`cli-status-banner ${cliResult.success ? "cli-status-pass" : "cli-status-fail"}`}>
+                <span className="cli-status-icon">{cliResult.success ? "✓" : "✕"}</span>
+                <div>
+                  <span className="cli-status-text">
+                    {cliResult.success ? "All tests passed" : "Tests failed"}
+                  </span>
+                  {cliResult.environment_used && (
+                    <span className="cli-env-used">Environment: {cliResult.environment_used}</span>
+                  )}
+                </div>
+                <span className="cli-exit-code">Exit code: {cliResult.exit_code}</span>
+              </div>
+
+              {cliResult.stdout && (
+                <div className="cli-output-section">
+                  <h3 className="cli-output-label">Output</h3>
+                  <pre className="cli-output">{cliResult.stdout}</pre>
+                </div>
+              )}
+
+              {cliResult.stderr && (
+                <div className="cli-output-section">
+                  <h3 className="cli-output-label cli-output-label-error">Errors</h3>
+                  <pre className="cli-output cli-output-error">{cliResult.stderr}</pre>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -187,7 +313,7 @@ function EnvCard({ env, copied, onCopy }) {
         </div>
         <div className="env-card-actions" onClick={(e) => e.stopPropagation()}>
           <button className="btn btn-secondary btn-sm" onClick={onCopy}>
-            {copied ? "✓ Copied" : "Copy"}
+            {copied ? "Copied" : "Copy"}
           </button>
         </div>
       </div>
@@ -208,7 +334,7 @@ function EnvCard({ env, copied, onCopy }) {
                   <tr key={i}>
                     <td className="env-key">{v.key}</td>
                     <td className="env-val">{v.value || <span className="env-empty-val">—</span>}</td>
-                    <td>{v.secret ? "🔒" : "—"}</td>
+                    <td>{v.secret ? "Yes" : "—"}</td>
                   </tr>
                 ))}
               </tbody>

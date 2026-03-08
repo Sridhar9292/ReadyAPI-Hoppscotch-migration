@@ -8,6 +8,7 @@ export default defineConfig({
     proxy: {
       "/convert": "http://localhost:8000",
       "/download-zip": "http://localhost:8000",
+      "/run-cli": "http://localhost:8000",
       "/health": "http://localhost:8000",
     },
   },
