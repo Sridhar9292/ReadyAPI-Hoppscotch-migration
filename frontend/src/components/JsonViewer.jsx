@@ -27,7 +27,7 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
   const [copiedEnvIdx, setCopiedEnvIdx] = useState(null);
   const [downloadingZip, setDownloadingZip] = useState(false);
 
-  const collectionJson = JSON.stringify(data, null, 2);
+  const collectionJson = JSON.stringify([data], null, 2);
 
   const handleCopyCollection = () => {
     navigator.clipboard.writeText(collectionJson).then(() => {

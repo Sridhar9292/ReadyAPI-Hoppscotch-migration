@@ -159,7 +159,7 @@ def _parse_request_node(step_name: str, req_node: ET.Element) -> dict:
     content_type = _detect_content_type(body_str, headers)
 
     return {
-        "v": "1",
+        "v": "3",
         "name": step_name,
         "method": method,
         "endpoint": endpoint,
@@ -169,9 +169,10 @@ def _parse_request_node(step_name: str, req_node: ET.Element) -> dict:
         "testScript": "",
         "body": {
             "contentType": content_type,
-            "body": body_str,
+            "body": body_str if body_str else None,
         },
-        "auth": {"authType": "none", "authActive": False},
+        "auth": {"authType": "none", "authActive": True},
+        "requestVariables": [],
     }
 
 
@@ -212,11 +213,11 @@ def parse_readyapi_xml(xml_content: str) -> tuple[dict, list[dict]]:
 
     for suite in root.findall("con:testSuite", NS):
         suite_name = suite.get("name", "Test Suite")
-        suite_folder: dict = {"v": 2, "name": suite_name, "folders": [], "requests": []}
+        suite_folder: dict = {"v": 2, "name": suite_name, "folders": [], "requests": [], "auth": {"authType": "inherit", "authActive": True}, "headers": []}
 
         for case in suite.findall("con:testCase", NS):
             case_name = case.get("name", "Test Case")
-            case_folder: dict = {"v": 2, "name": case_name, "folders": [], "requests": []}
+            case_folder: dict = {"v": 2, "name": case_name, "folders": [], "requests": [], "auth": {"authType": "inherit", "authActive": True}, "headers": []}
 
             for step in case.findall("con:testStep", NS):
                 req = _parse_step(step)
@@ -227,7 +228,7 @@ def parse_readyapi_xml(xml_content: str) -> tuple[dict, list[dict]]:
 
         folders.append(suite_folder)
 
-    collection = {"v": 2, "name": project_name, "folders": folders, "requests": []}
+    collection = {"v": 2, "name": project_name, "folders": folders, "requests": [], "auth": {"authType": "inherit", "authActive": True}, "headers": []}
     environments = parse_environments(root, project_name)
     print('collection -> ',collection)
     print('environment -> ',environments)
@@ -257,7 +258,7 @@ Return a single JSON object with two top-level keys: "collection" and "environme
           "folders": [],
           "requests": [
             {
-              "v": "1",
+              "v": "3",
               "name": "<request name>",
               "method": "<GET|POST|PUT|DELETE|PATCH>",
               "endpoint": "<URL — replace ${#Project#varName} with <<varName>>>",
@@ -265,16 +266,23 @@ Return a single JSON object with two top-level keys: "collection" and "environme
               "headers": [{ "key": "<name>", "value": "<value>", "active": true }],
               "preRequestScript": "",
               "testScript": "",
-              "body": { "contentType": "<content-type or null>", "body": "<body string>" },
-              "auth": { "authType": "none", "authActive": false }
+              "body": { "contentType": "<content-type or null>", "body": "<body string or null>" },
+              "auth": { "authType": "none", "authActive": true },
+              "requestVariables": []
             }
-          ]
+          ],
+          "auth": { "authType": "inherit", "authActive": true },
+          "headers": []
         }
       ],
-      "requests": []
+      "requests": [],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
     }
   ],
-  "requests": []
+  "requests": [],
+  "auth": { "authType": "inherit", "authActive": true },
+  "headers": []
 }
 
 "environments" must be an array of Hoppscotch environment objects, one per <con:environment> in the XML:
@@ -442,7 +450,7 @@ async def download_zip(
         collection_name = collection.get("name", "hoppscotch-collection")
         zf.writestr(
             f"{collection_name}.json",
-            json.dumps(collection, indent=2),
+            json.dumps([collection], indent=2),
         )
         for env in environments:
             env_name = env.get("name", "environment")
