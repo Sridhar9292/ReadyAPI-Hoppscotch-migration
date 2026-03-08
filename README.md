@@ -57,15 +57,14 @@ Interactive docs: `http://localhost:8000/docs`
 ### 2. Frontend
 
 ```bash
-cd frontend
-
+# Install Packages
 npm install
-
-# (Optional) configure API URL
-cp .env.example .env
 
 # Start dev server
 npm run dev
+
+# NPM Setup
+npm run setup
 ```
 
 Open `http://localhost:5173` in your browser.

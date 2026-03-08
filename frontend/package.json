@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup": "npm install -g @hoppscotch/cli"
   },
   "dependencies": {
+    "@hoppscotch/cli": "^0.30.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
