@@ -91,6 +91,7 @@ def _detect_content_type(body: str, headers: list) -> str | None:
 def _build_hopp_env(name: str, props: dict[str, str]) -> dict:
     """Build a single Hoppscotch environment object."""
     return {
+        "id": name,
         "v": 1,
         "name": name,
         "variables": [
@@ -279,6 +280,7 @@ Return a single JSON object with two top-level keys: "collection" and "environme
 "environments" must be an array of Hoppscotch environment objects, one per <con:environment> in the XML:
 [
   {
+    "id": "<environment name, e.g. DEV or QA>",
     "v": 1,
     "name": "<environment name, e.g. DEV or QA>",
     "variables": [

@@ -21,16 +21,6 @@ function highlight(json) {
     );
 }
 
-function downloadJson(data, filename) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 export default function JsonViewer({ data, environments = [], truncated, mode, uploadedFile, selectedMode, apiBase }) {
   const [activeTab, setActiveTab] = useState("collection");
   const [copiedCollection, setCopiedCollection] = useState(false);
@@ -50,12 +40,6 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
     navigator.clipboard.writeText(JSON.stringify(env, null, 2)).then(() => {
       setCopiedEnvIdx(idx);
       setTimeout(() => setCopiedEnvIdx(null), 2000);
-    });
-  };
-
-  const handleDownloadAllEnvs = () => {
-    environments.forEach((env) => {
-      downloadJson(env, `${env.name || "environment"}.json`);
     });
   };
 
@@ -137,12 +121,6 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
               <button className="btn btn-secondary" onClick={handleCopyCollection}>
                 {copiedCollection ? "✓ Copied" : "Copy JSON"}
               </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => downloadJson(data, `${data?.name || "hoppscotch-collection"}.json`)}
-              >
-                ⬇ Download Collection
-              </button>
             </div>
           </div>
 
@@ -166,11 +144,6 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
           <div className="viewer-header">
             <h2 className="viewer-title">Hoppscotch Environments</h2>
             <div className="viewer-actions">
-              {environments.length > 1 && (
-                <button className="btn btn-secondary" onClick={handleDownloadAllEnvs}>
-                  ⬇ Download All
-                </button>
-              )}
             </div>
           </div>
 
@@ -191,7 +164,6 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
                   env={env}
                   copied={copiedEnvIdx === idx}
                   onCopy={() => handleCopyEnv(env, idx)}
-                  onDownload={() => downloadJson(env, `${env.name || "environment"}.json`)}
                 />
               ))}
             </div>
@@ -202,7 +174,7 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
   );
 }
 
-function EnvCard({ env, copied, onCopy, onDownload }) {
+function EnvCard({ env, copied, onCopy }) {
   const [expanded, setExpanded] = useState(true);
 
   return (
@@ -216,9 +188,6 @@ function EnvCard({ env, copied, onCopy, onDownload }) {
         <div className="env-card-actions" onClick={(e) => e.stopPropagation()}>
           <button className="btn btn-secondary btn-sm" onClick={onCopy}>
             {copied ? "✓ Copied" : "Copy"}
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={onDownload}>
-            ⬇ Download
           </button>
         </div>
       </div>
