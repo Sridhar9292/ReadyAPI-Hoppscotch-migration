@@ -233,8 +233,7 @@ def parse_readyapi_xml(xml_content: str) -> tuple[dict, list[dict]]:
 
     collection = {"v": 2, "name": project_name, "folders": folders, "requests": [], "auth": {"authType": "inherit", "authActive": True}, "headers": []}
     environments = parse_environments(root, project_name)
-    print('collection -> ',collection)
-    print('environment -> ',environments)
+    print('Built In Parser -> ',collection)
     return collection, environments
 
 
@@ -336,6 +335,7 @@ def convert_with_openai(xml_content: str) -> tuple[dict, list[dict], bool]:
         response_format={"type": "json_object"},
     )
     raw = response.choices[0].message.content.strip()
+    print('AI Parser -> ', raw)
     raw = re.sub(r"^```(?:json)?\n?", "", raw)
     raw = re.sub(r"\n?```$", "", raw).strip()
     parsed = json.loads(raw)
