@@ -62,6 +62,37 @@ def _convert_refs(value: str) -> str:
     return _PROP_REF_RE.sub(lambda m: f"<<{m.group(1)}>>", value)
 
 
+
+# Only HTTP status code assertions are converted; all other types are ignored.
+SUPPORTED_ASSERTION_TYPES = {
+    "Valid HTTP Status Codes",
+}
+
+
+def _parse_assertions(req_node: ET.Element) -> str:
+    """Convert <con:assertion> elements to Hoppscotch pw.* JavaScript test snippets.
+
+    Only "Valid HTTP Status Codes" assertions are converted; all others are ignored.
+    """
+    lines: list[str] = []
+
+    for assertion in req_node.findall("con:assertion", NS):
+        if assertion.get("type", "") != "Valid HTTP Status Codes":
+            continue
+
+        name = assertion.get("name", "Valid HTTP Status Codes").replace('"', '\\"')
+        config = assertion.find("con:configuration", NS)
+        codes_el = config.find("con:codes", NS) if config is not None else None
+        if codes_el is None or not codes_el.text:
+            continue
+        code = codes_el.text.strip()
+        lines.append(f'pw.test("{name}", () => {{')
+        lines.append(f'  pw.expect(pw.response.status).toBe({code});')
+        lines.append('});')
+
+    return "\n".join(lines)
+
+
 def _parse_properties(el: ET.Element) -> dict[str, str]:
     """Extract <con:properties><con:property> key/value pairs from an element."""
     props = {}
@@ -161,6 +192,8 @@ def _parse_request_node(step_name: str, req_node: ET.Element) -> dict:
     )
     content_type = _detect_content_type(body_str, headers)
 
+    test_script = _parse_assertions(req_node)
+
     return {
         "v": "3",
         "name": step_name,
@@ -169,7 +202,7 @@ def _parse_request_node(step_name: str, req_node: ET.Element) -> dict:
         "params": params,
         "headers": headers,
         "preRequestScript": "",
-        "testScript": "",
+        "testScript": test_script,
         "body": {
             "contentType": content_type,
             "body": body_str if body_str else None,
@@ -267,7 +300,7 @@ Return a single JSON object with two top-level keys: "collection" and "environme
               "params": [{ "key": "<name>", "value": "<value>", "active": true }],
               "headers": [{ "key": "<name>", "value": "<value>", "active": true }],
               "preRequestScript": "",
-              "testScript": "",
+              "testScript": "<JavaScript pw.test() assertions converted from <con:assertion> elements — see rules below>",
               "body": { "contentType": "<content-type or null>", "body": "<body string or null>" },
               "auth": { "authType": "none", "authActive": true },
               "requestVariables": []
@@ -306,6 +339,11 @@ Mapping rules:
 - Headers from <headers><entry key= value=>
 - Body from <requestContent> or <request>
 - Convert ALL ReadyAPI property refs ${#Project#varName}, ${#Env#varName} to Hoppscotch <<varName>>
+
+Assertion conversion rules (populate "testScript" for each request):
+- ONLY convert assertions of type "Valid HTTP Status Codes". Ignore all other assertion types entirely.
+- "Valid HTTP Status Codes" → pw.test("<name>", () => { pw.expect(pw.response.status).toBe(<codes>); });
+- If a request has no "Valid HTTP Status Codes" assertions, set "testScript" to ""
 - Each <con:environment> in <con:environments> → one entry in "environments" array
 - If no environments exist, use project-level <con:properties> as a single "Default" environment
 """

@@ -110,6 +110,37 @@
               <con:entry key="Accept" value="application/json"/>
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-001-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-001-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Count" id="assert-001-count" name="Array Is Not Empty">
+              <con:configuration>
+                <con:path>$</con:path>
+                <con:expectedContent>0</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-001-id" name="First Item Has id">
+              <con:configuration>
+                <con:path>$[0].id</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-001-title" name="First Item Has title">
+              <con:configuration>
+                <con:path>$[0].title</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
@@ -124,6 +155,46 @@
               <con:entry key="Accept" value="application/json"/>
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-002-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-002-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-002-id" name="Post ID Matches">
+              <con:configuration>
+                <con:path>$.id</con:path>
+                <con:expectedContent>${#Project#postId}</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-002-title" name="Has title Field">
+              <con:configuration>
+                <con:path>$.title</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-002-body" name="Has body Field">
+              <con:configuration>
+                <con:path>$.body</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-002-userId" name="Has userId Field">
+              <con:configuration>
+                <con:path>$.userId</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
@@ -138,6 +209,32 @@
               <con:entry key="Accept" value="application/json"/>
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-003-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-003-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Count" id="assert-003-count" name="Returns Posts For User">
+              <con:configuration>
+                <con:path>$</con:path>
+                <con:expectedContent>0</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-003-userId" name="All Posts Belong To User">
+              <con:configuration>
+                <con:path>$[0].userId</con:path>
+                <con:expectedContent>${#Project#userId}</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
@@ -160,6 +257,50 @@
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
             <con:requestContent>{"title": "foo", "body": "bar", "userId": ${#Project#userId}}</con:requestContent>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-004-status" name="Status 201 Created">
+              <con:configuration>
+                <con:codes>201</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-004-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-004-id" name="Response Has id">
+              <con:configuration>
+                <con:path>$.id</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-004-title" name="Title Matches Request">
+              <con:configuration>
+                <con:path>$.title</con:path>
+                <con:expectedContent>foo</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-004-body" name="Body Matches Request">
+              <con:configuration>
+                <con:path>$.body</con:path>
+                <con:expectedContent>bar</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-004-userId" name="UserId Matches Request">
+              <con:configuration>
+                <con:path>$.userId</con:path>
+                <con:expectedContent>${#Project#userId}</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
@@ -176,6 +317,43 @@
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
             <con:requestContent>{"id": ${#Project#postId}, "title": "updated title", "body": "updated body", "userId": ${#Project#userId}}</con:requestContent>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-005-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-005-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-005-id" name="Post ID Matches">
+              <con:configuration>
+                <con:path>$.id</con:path>
+                <con:expectedContent>${#Project#postId}</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-005-title" name="Title Is Updated">
+              <con:configuration>
+                <con:path>$.title</con:path>
+                <con:expectedContent>updated title</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-005-body" name="Body Is Updated">
+              <con:configuration>
+                <con:path>$.body</con:path>
+                <con:expectedContent>updated body</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
@@ -192,6 +370,32 @@
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
             <con:requestContent>{"title": "patched title"}</con:requestContent>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-006-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-006-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-006-title" name="Title Is Patched">
+              <con:configuration>
+                <con:path>$.title</con:path>
+                <con:expectedContent>patched title</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-006-id" name="Response Has id">
+              <con:configuration>
+                <con:path>$.id</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
@@ -206,6 +410,22 @@
               <con:entry key="Accept" value="application/json"/>
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-007-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-007-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Simple Contains" id="assert-007-body" name="Response Body Is Empty Object">
+              <con:configuration>
+                <con:token>{}</con:token>
+                <con:ignoreCase>false</con:ignoreCase>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
@@ -232,6 +452,37 @@
               <con:entry key="Accept" value="application/json"/>
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-008-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-008-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Count" id="assert-008-count" name="Array Is Not Empty">
+              <con:configuration>
+                <con:path>$</con:path>
+                <con:expectedContent>0</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-008-id" name="First User Has id">
+              <con:configuration>
+                <con:path>$[0].id</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-008-email" name="First User Has email">
+              <con:configuration>
+                <con:path>$[0].email</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
@@ -246,6 +497,46 @@
               <con:entry key="Accept" value="application/json"/>
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-009-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-009-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-009-id" name="User ID Matches">
+              <con:configuration>
+                <con:path>$.id</con:path>
+                <con:expectedContent>${#Project#userId}</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-009-name" name="Has name Field">
+              <con:configuration>
+                <con:path>$.name</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-009-email" name="Has email Field">
+              <con:configuration>
+                <con:path>$.email</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-009-username" name="Has username Field">
+              <con:configuration>
+                <con:path>$.username</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
@@ -260,6 +551,39 @@
               <con:entry key="Accept" value="application/json"/>
               <con:entry key="Authorization" value="Bearer ${#Project#authToken}"/>
             </con:headers>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-010-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-010-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Count" id="assert-010-count" name="Returns Todos">
+              <con:configuration>
+                <con:path>$</con:path>
+                <con:expectedContent>0</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Match" id="assert-010-completed" name="Todos Are Not Completed">
+              <con:configuration>
+                <con:path>$[0].completed</con:path>
+                <con:expectedContent>false</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="assert-010-title" name="Has title Field">
+              <con:configuration>
+                <con:path>$[0].title</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
           </con:request>
         </con:config>
       </con:testStep>
