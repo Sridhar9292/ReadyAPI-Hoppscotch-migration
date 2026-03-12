@@ -21,7 +21,7 @@ function highlight(json) {
     );
 }
 
-export default function JsonViewer({ data, environments = [], truncated, mode, uploadedFile, selectedMode, apiBase }) {
+export default function JsonViewer({ data, environments = [], truncated, mode, uploadedFile, apiBase }) {
   const [activeTab, setActiveTab] = useState("collection");
   const [copiedCollection, setCopiedCollection] = useState(false);
   const [copiedEnvIdx, setCopiedEnvIdx] = useState(null);
@@ -52,7 +52,7 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
     try {
       const formData = new FormData();
       formData.append("file", uploadedFile);
-      const res = await fetch(`${apiBase}/download-zip?mode=${selectedMode}`, {
+      const res = await fetch(`${apiBase}/download-zip`, {
         method: "POST",
         body: formData,
       });
@@ -85,7 +85,7 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
       const formData = new FormData();
       formData.append("file", uploadedFile);
       const res = await fetch(
-        `${apiBase}/run-cli?mode=${selectedMode}&env_index=${selectedEnvIndex}`,
+        `${apiBase}/run-cli?env_index=${selectedEnvIndex}`,
         { method: "POST", body: formData }
       );
       const json = await res.json();
@@ -147,9 +147,7 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
           >
             {runningCli ? "Running..." : "Run Tests"}
           </button>
-          <span className="mode-used-badge">
-            {mode === "openai" ? "OpenAI" : "Parser"}
-          </span>
+          <span className="mode-used-badge">OpenAI</span>
           {truncated && (
             <span className="truncation-badge" title="Large XML was truncated to fit model limits">
               Partial (XML truncated)
