@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import FileUpload from "./components/FileUpload";
 import JsonViewer from "./components/JsonViewer";
 import "./App.css";
@@ -9,23 +9,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [selectedMode, setSelectedMode] = useState("parser");
-  const [openaiAvailable, setOpenaiAvailable] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
-
-  // Fetch available modes from backend on mount
-  useEffect(() => {
-    fetch(`${API_BASE}/modes`)
-      .then((r) => r.json())
-      .then((data) => {
-        setOpenaiAvailable(data.modes.includes("openai"));
-        // Always show both options, default to parser
-        setSelectedMode("parser");
-      })
-      .catch(() => {
-        // Backend not yet up — keep defaults
-      });
-  }, []);
 
   const handleUpload = async (file) => {
     setLoading(true);
@@ -37,7 +21,7 @@ export default function App() {
     formData.append("file", file);
 
     try {
-      const res = await fetch(`${API_BASE}/convert?mode=${selectedMode}`, {
+      const res = await fetch(`${API_BASE}/convert`, {
         method: "POST",
         body: formData,
       });
@@ -75,48 +59,14 @@ export default function App() {
       <main className="app-main">
         <div className="container">
 
-          {/* Mode selector */}
-          <div className="mode-bar">
-            <span className="mode-label">Conversion mode:</span>
-            <div className="mode-pills">
-              <button
-                className={`pill ${selectedMode === "parser" ? "pill-active" : ""}`}
-                onClick={() => setSelectedMode("parser")}
-                title="Fast built-in XML parser — no API key required"
-              >
-                Built-in Parser
-              </button>
-              <button
-                className={`pill ${selectedMode === "openai" ? "pill-active" : ""}`}
-                onClick={() => setSelectedMode("openai")}
-                title={openaiAvailable ? "Uses OpenAI GPT-4o for smarter parsing" : "Requires OPENAI_API_KEY in backend .env"}
-              >
-                OpenAI (GPT-4o)
-              </button>
-            </div>
-            <span className="mode-badge">
-              {selectedMode === "openai"
-                ? (openaiAvailable ? "🤖 AI-powered" : "⚠ API key not configured")
-                : "⚙ No API key needed"}
-            </span>
-          </div>
-
           <FileUpload onUpload={handleUpload} loading={loading} />
 
           {loading && (
             <div className="status-box status-loading">
               <div className="spinner" />
               <div>
-                <p className="status-title">
-                  {selectedMode === "openai"
-                    ? "Converting via OpenAI…"
-                    : "Parsing XML…"}
-                </p>
-                <p className="status-sub">
-                  {selectedMode === "openai"
-                    ? "Sending XML to GPT-4o and building Hoppscotch collection"
-                    : "Running built-in ReadyAPI XML parser"}
-                </p>
+                <p className="status-title">Converting via OpenAI…</p>
+                <p className="status-sub">Sending XML to GPT-4o and building Hoppscotch collection</p>
               </div>
             </div>
           )}
@@ -138,7 +88,6 @@ export default function App() {
               truncated={result.truncated}
               mode={result.mode}
               uploadedFile={uploadedFile}
-              selectedMode={selectedMode}
               apiBase={API_BASE}
             />
           )}
