@@ -104,11 +104,74 @@ Mapping rules:
 - Convert ALL ReadyAPI property refs ${#Project#varName}, ${#Env#varName} to Hoppscotch <<varName>>
 
 Assertion conversion rules (populate "testScript" for each request):
-- ONLY convert assertions of type "Valid HTTP Status Codes". Ignore all other assertion types entirely.
-- "Valid HTTP Status Codes" → pw.test("<name>", () => { pw.expect(pw.response.status).toBe(<codes>); });
-- If a request has no "Valid HTTP Status Codes" assertions, set "testScript" to ""
+Convert ALL of the following ReadyAPI assertion types to Hoppscotch pw.test() blocks.
+If a request has no supported assertions, set "testScript" to "".
+
+ENVIRONMENT VARIABLE RESOLUTION IN ASSERTIONS:
+- If an assertion's expectedContent or token contains a ReadyAPI property reference such as ${#Project#varName}, ${#Env#varName}, or ${#TestCase#varName}, use pw.env.get("varName") as the expected value in the generated pw.test() code — do NOT inline the literal value.
+- Additionally, wrap the actual response value with String(...) so the types match when comparing against pw.env.get() (which always returns a string).
+- If the path itself contains a property reference, resolve it to its literal value from the extracted environments/project properties.
+- If a variable cannot be resolved at all, use pw.env.get("varName") and add a comment // NOTE: ensure <<varName>> is set in the active Hoppscotch environment.
+
+Supported assertion types and their Hoppscotch equivalents:
+
+1. "Valid HTTP Status Codes"
+   ReadyAPI XML: <con:assertion type="Valid HTTP Status Codes"> ... <codes>200</codes> ...
+   Hoppscotch:
+   pw.test("<assertion name>", () => {
+     pw.expect(pw.response.status).toBe(<status code>);
+   });
+
+2. "JsonPath Match"
+   ReadyAPI XML: <con:assertion type="JsonPath Match"> ... <path>$[0].id</path> ... <expectedContent>1</expectedContent> ...
+   - Convert JsonPath expression to JavaScript property access on pw.response.body (e.g. $[0].id → pw.response.body[0].id).
+   - If expectedContent is a plain literal number, use it as a number literal; if a plain literal string, use a quoted string.
+   - If expectedContent is a ReadyAPI env var reference (e.g. ${#Project#userId}), use String(<js path>) as the actual value and pw.env.get("userId") as the expected value.
+   Example (env var in expectedContent):
+   pw.test("All Posts Belong To User", () => {
+     pw.expect(String(pw.response.body[0].userId)).toBe(pw.env.get("userId"));
+   });
+   Example (plain literal):
+   pw.test("JsonPath Match", () => {
+     pw.expect(pw.response.body[0].id).toBe(1);
+   });
+
+3. "Contains"
+   ReadyAPI XML: <con:assertion type="Contains"> ... <token>someText</token> ...
+   - If token is a ReadyAPI env var reference, use pw.env.get("varName") inside includes().
+   - If token is a plain literal, use it as a quoted string.
+   Example (plain literal):
+   pw.test("<assertion name>", () => {
+     const body = JSON.stringify(pw.response.body);
+     pw.expect(body.includes("<token>")).toBe(true);
+   });
+   Example (env var token):
+   pw.test("<assertion name>", () => {
+     const body = JSON.stringify(pw.response.body);
+     pw.expect(body.includes(pw.env.get("<varName>"))).toBe(true);
+   });
+
+4. "JsonPath Existence Match"
+   ReadyAPI XML: <con:assertion type="JsonPath Existence Match"> ... <path>$[0].title</path> ...
+   - Convert JsonPath to JavaScript property access on pw.response.body.
+   - If the path references an env var, resolve it to its literal value from the extracted environments/project properties.
+   Hoppscotch:
+   pw.test("<assertion name>", () => {
+     const data = pw.response.body;
+     pw.expect(<resolved parent expression> && <resolved leaf expression> !== undefined).toBe(true);
+   });
+   Example: path $[0].title → pw.expect(data[0] && data[0].title !== undefined).toBe(true);
+
 - Each <con:environment> in <con:environments> → one entry in "environments" array
 - If no environments exist, use project-level <con:properties> as a single "Default" environment
+
+BEFORE returning the final JSON output, validate ALL generated "testScript" values:
+1. Check each testScript for JavaScript syntax errors — unmatched braces/parentheses, missing semicolons, invalid identifiers, unclosed string literals, etc.
+2. Check for logical/compilation errors — calling undefined variables, incorrect pw.* API usage (only pw.test, pw.expect, pw.response, pw.env.get are valid), malformed arrow functions.
+3. If any testScript has an error, fix it before including it in the output. Do not return a testScript that would fail to parse or execute.
+4. Ensure every pw.test() block has exactly one pw.expect() call and a proper callback structure: pw.test("name", () => { pw.expect(...).toBe(...); });
+5. Verify the complete JSON output itself is valid — all strings are properly escaped, no trailing commas, all objects/arrays are closed.
+Only return the JSON after all these checks pass.
 """
 
 USER_PROMPT_TEMPLATE = """Convert the following ReadyAPI XML into a Hoppscotch collection + environments JSON.
