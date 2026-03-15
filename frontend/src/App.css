@@ -228,6 +228,17 @@ body {
   cursor: help;
 }
 
+.chunks-badge {
+  font-size: 0.72rem;
+  background: #0a3d6222;
+  color: #4ea8de;
+  border: 1px solid #4ea8de;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-weight: 400;
+  cursor: help;
+}
+
 .viewer-actions { display: flex; gap: 10px; }
 
 /* ── Stats bar ── */

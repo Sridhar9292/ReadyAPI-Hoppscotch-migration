@@ -21,7 +21,7 @@ function highlight(json) {
     );
 }
 
-export default function JsonViewer({ data, environments = [], truncated, mode, uploadedFile, apiBase }) {
+export default function JsonViewer({ data, environments = [], truncated, chunksProcessed = 1, mode, uploadedFile, apiBase }) {
   const [activeTab, setActiveTab] = useState("collection");
   const [copiedCollection, setCopiedCollection] = useState(false);
   const [copiedEnvIdx, setCopiedEnvIdx] = useState(null);
@@ -148,9 +148,9 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
             {runningCli ? "Running..." : "Run Tests"}
           </button>
           <span className="mode-used-badge">OpenAI</span>
-          {truncated && (
-            <span className="truncation-badge" title="Large XML was truncated to fit model limits">
-              Partial (XML truncated)
+          {chunksProcessed > 1 && (
+            <span className="chunks-badge" title={`XML was split into ${chunksProcessed} chunks of ~1000 lines each and merged`}>
+              {chunksProcessed} chunks merged
             </span>
           )}
         </div>
@@ -173,6 +173,7 @@ export default function JsonViewer({ data, environments = [], truncated, mode, u
             <Stat label="Test Cases" value={countTestCases(data)} />
             <Stat label="Requests" value={countRequests(data)} />
             <Stat label="Collection" value={data?.name || "—"} />
+            {chunksProcessed > 1 && <Stat label="Chunks" value={chunksProcessed} />}
           </div>
 
           <pre
