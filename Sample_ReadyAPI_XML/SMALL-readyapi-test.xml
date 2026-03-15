@@ -28,6 +28,10 @@
       <con:name>authToken</con:name>
       <con:value>dev-token-placeholder</con:value>
     </con:property>
+    <con:property>
+      <con:name>httpbinUrl</con:name>
+      <con:value>https://httpbin.org</con:value>
+    </con:property>
   </con:properties>
 
   <!-- ═══════════════════════════════════════════════════
@@ -58,6 +62,10 @@
           <con:name>postId</con:name>
           <con:value>1</con:value>
         </con:property>
+        <con:property>
+          <con:name>httpbinUrl</con:name>
+          <con:value>https://httpbin.org</con:value>
+        </con:property>
       </con:properties>
     </con:environment>
 
@@ -82,6 +90,10 @@
         <con:property>
           <con:name>postId</con:name>
           <con:value>5</con:value>
+        </con:property>
+        <con:property>
+          <con:name>httpbinUrl</con:name>
+          <con:value>https://httpbin.org</con:value>
         </con:property>
       </con:properties>
     </con:environment>
@@ -582,6 +594,137 @@
                 <con:path>$[0].title</con:path>
                 <con:expectedContent>true</con:expectedContent>
                 <con:allowWildcards>false</con:allowWildcards>
+              </con:configuration>
+            </con:assertion>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+    </con:testCase>
+  </con:testSuite>
+
+  <!-- ═══════════════════════════════════════════════════
+       Test Suite 3: Content Type Tests
+       Validates HTML and XML response handling via httpbin.org
+  ═══════════════════════════════════════════════════ -->
+  <con:testSuite name="Content Type Tests" runType="SEQUENTIAL">
+    <con:settings/>
+
+    <!-- Test Case: HTML Response -->
+    <con:testCase name="HTML Response" failOnError="true" keepSession="false">
+      <con:settings/>
+
+      <con:testStep type="httprequest" name="Get HTML Page">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-011" name="Get HTML Page">
+            <con:endpoint>${#Project#httpbinUrl}/html</con:endpoint>
+            <con:method>GET</con:method>
+            <con:headers>
+              <con:entry key="Accept" value="text/html"/>
+            </con:headers>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-011-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-011-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response Header" id="assert-011-ct" name="Content-Type Is HTML">
+              <con:configuration>
+                <con:header>Content-Type</con:header>
+                <con:value>text/html</con:value>
+                <con:useRegexp>true</con:useRegexp>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Simple Contains" id="assert-011-doctype" name="Response Contains HTML Doctype">
+              <con:configuration>
+                <con:token>&lt;!DOCTYPE html&gt;</con:token>
+                <con:ignoreCase>true</con:ignoreCase>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Simple Contains" id="assert-011-html-tag" name="Response Contains html Tag">
+              <con:configuration>
+                <con:token>&lt;html</con:token>
+                <con:ignoreCase>true</con:ignoreCase>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Simple Contains" id="assert-011-body-tag" name="Response Contains body Tag">
+              <con:configuration>
+                <con:token>&lt;body</con:token>
+                <con:ignoreCase>true</con:ignoreCase>
+              </con:configuration>
+            </con:assertion>
+          </con:request>
+        </con:config>
+      </con:testStep>
+
+    </con:testCase>
+
+    <!-- Test Case: XML Response -->
+    <con:testCase name="XML Response" failOnError="true" keepSession="false">
+      <con:settings/>
+
+      <con:testStep type="httprequest" name="Get XML Data">
+        <con:settings/>
+        <con:config>
+          <con:request id="req-012" name="Get XML Data">
+            <con:endpoint>${#Project#httpbinUrl}/xml</con:endpoint>
+            <con:method>GET</con:method>
+            <con:headers>
+              <con:entry key="Accept" value="application/xml"/>
+            </con:headers>
+            <con:assertion type="Valid HTTP Status Codes" id="assert-012-status" name="Status 200 OK">
+              <con:configuration>
+                <con:codes>200</con:codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response SLA" id="assert-012-sla" name="Response Time &lt; 5s">
+              <con:configuration>
+                <con:sla>5000</con:sla>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Response Header" id="assert-012-ct" name="Content-Type Is XML">
+              <con:configuration>
+                <con:header>Content-Type</con:header>
+                <con:value>application/xml</con:value>
+                <con:useRegexp>true</con:useRegexp>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="Simple Contains" id="assert-012-xml-decl" name="Response Contains XML Declaration">
+              <con:configuration>
+                <con:token>&lt;?xml</con:token>
+                <con:ignoreCase>false</con:ignoreCase>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="XPath Match" id="assert-012-xpath-slide" name="Root slideshow Element Exists">
+              <con:configuration>
+                <con:path>//slideshow</con:path>
+                <con:expectedContent>*</con:expectedContent>
+                <con:allowWildcards>true</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="XPath Match" id="assert-012-xpath-title" name="slideshow Has title Attribute">
+              <con:configuration>
+                <con:path>string(//slideshow/@title)</con:path>
+                <con:expectedContent>Sample Slide Show</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="XPath Match" id="assert-012-xpath-slide-count" name="At Least One slide Element Present">
+              <con:configuration>
+                <con:path>count(//slide) &gt; 0</con:path>
+                <con:expectedContent>true</con:expectedContent>
+                <con:allowWildcards>false</con:allowWildcards>
+                <con:ignoreNamspaceDifferences>false</con:ignoreNamspaceDifferences>
+                <con:ignoreComments>false</con:ignoreComments>
               </con:configuration>
             </con:assertion>
           </con:request>
