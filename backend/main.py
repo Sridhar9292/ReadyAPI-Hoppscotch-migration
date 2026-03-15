@@ -181,31 +181,163 @@ ReadyAPI XML:
 
 Return ONLY the JSON object with keys "collection" and "environments". No markdown, no explanation."""
 
+USER_PROMPT_CHUNK_TEMPLATE = """Convert the following ReadyAPI XML (chunk {chunk_num} of {total_chunks}) into a Hoppscotch collection + environments JSON.
+This XML fragment contains complete test suites extracted from a larger ReadyAPI project file.
+Extract ALL test suites present in this fragment. The project header/environments section is included for context.
 
-def convert_with_openai(xml_content: str) -> tuple[dict, list[dict], bool]:
-    """Call OpenAI to convert XML. Returns (collection, environments, truncated)."""
-    MAX_XML_CHARS = 60_000
-    truncated = len(xml_content) > MAX_XML_CHARS
-    xml_snippet = xml_content[:MAX_XML_CHARS] if truncated else xml_content
+ReadyAPI XML:
+{xml_content}
+
+Return ONLY the JSON object with keys "collection" and "environments". No markdown, no explanation."""
+
+CHUNK_SIZE_LINES = 1000
+
+
+def convert_with_openai(xml_content: str, chunk_num: int = 1, total_chunks: int = 1) -> tuple[dict, list[dict]]:
+    """Call OpenAI to convert XML or a chunk of it. Returns (collection, environments)."""
+    if total_chunks > 1:
+        prompt = USER_PROMPT_CHUNK_TEMPLATE.format(
+            xml_content=xml_content,
+            chunk_num=chunk_num,
+            total_chunks=total_chunks,
+        )
+    else:
+        prompt = USER_PROMPT_TEMPLATE.format(xml_content=xml_content)
 
     response = openai_client.chat.completions.create(
         model=os.getenv("OPENAI_MODEL", "gpt-4o"),
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": USER_PROMPT_TEMPLATE.format(xml_content=xml_snippet)},
+            {"role": "user", "content": prompt},
         ],
         temperature=0,
         max_tokens=16000,
         response_format={"type": "json_object"},
     )
     raw = response.choices[0].message.content.strip()
-    print('AI Parser -> ', raw)
+    print(f"AI Parser (chunk {chunk_num}/{total_chunks}) ->", raw[:300])
     raw = re.sub(r"^```(?:json)?\n?", "", raw)
     raw = re.sub(r"\n?```$", "", raw).strip()
     parsed = json.loads(raw)
     collection = parsed.get("collection", parsed)
     environments = parsed.get("environments", [])
-    return collection, environments, truncated
+    return collection, environments
+
+
+def split_xml_into_chunks(xml_content: str, chunk_size: int = CHUNK_SIZE_LINES) -> list[str]:
+    """Split XML into chunks of ~chunk_size lines, always breaking at </con:testSuite> boundaries.
+
+    Each chunk contains the full project header (metadata + environments) so the model
+    has all the context it needs, followed by one or more complete <con:testSuite> blocks,
+    and finally the project closing tag(s).
+    """
+    lines = xml_content.splitlines(keepends=True)
+
+    if len(lines) <= chunk_size:
+        return [xml_content]
+
+    # --- locate the header (lines before the first <con:testSuite>) ---
+    header_end = len(lines)
+    for i, line in enumerate(lines):
+        if "<con:testSuite" in line:
+            header_end = i
+            break
+
+    if header_end == len(lines):
+        # No test suites at all — fall back to raw line chunking
+        return ["".join(lines[i : i + chunk_size]) for i in range(0, len(lines), chunk_size)]
+
+    header = "".join(lines[:header_end])
+
+    # --- locate the footer (lines after the last </con:testSuite>) ---
+    footer_start = header_end
+    for i in range(len(lines) - 1, header_end - 1, -1):
+        if "</con:testSuite>" in lines[i]:
+            footer_start = i + 1
+            break
+
+    footer = "".join(lines[footer_start:])
+
+    # The body is the test-suite section only
+    body_lines = lines[header_end:footer_start]
+
+    # Effective body lines per chunk (subtract overhead of header + footer)
+    overhead = header_end + (len(lines) - footer_start)
+    effective_chunk_size = max(chunk_size - overhead, 200)
+
+    # Group body lines into chunks, always flushing at </con:testSuite>
+    chunks: list[str] = []
+    current: list[str] = []
+    current_count = 0
+
+    for line in body_lines:
+        current.append(line)
+        current_count += 1
+        if current_count >= effective_chunk_size and "</con:testSuite>" in line:
+            chunks.append(header + "".join(current) + footer)
+            current = []
+            current_count = 0
+
+    if current:
+        chunks.append(header + "".join(current) + footer)
+
+    return chunks or [xml_content]
+
+
+def merge_collections(collections: list[dict]) -> dict:
+    """Merge multiple partial Hoppscotch collections into one by combining folders/requests."""
+    if not collections:
+        return {
+            "v": 2,
+            "name": "Merged Collection",
+            "folders": [],
+            "requests": [],
+            "auth": {"authType": "inherit", "authActive": True},
+            "headers": [],
+        }
+    base = dict(collections[0])
+    all_folders = list(base.get("folders", []))
+    all_requests = list(base.get("requests", []))
+    for col in collections[1:]:
+        all_folders.extend(col.get("folders", []))
+        all_requests.extend(col.get("requests", []))
+    base["folders"] = all_folders
+    base["requests"] = all_requests
+    return base
+
+
+def merge_environments(env_lists: list[list[dict]]) -> list[dict]:
+    """Deduplicate environments across chunks — first occurrence per name wins."""
+    seen: dict[str, dict] = {}
+    for env_list in env_lists:
+        for env in env_list:
+            name = env.get("name", "")
+            if name and name not in seen:
+                seen[name] = env
+    return list(seen.values())
+
+
+def convert_with_chunking(xml_content: str) -> tuple[dict, list[dict], int]:
+    """Convert the full XML by splitting into ~1000-line chunks, processing each, then merging.
+
+    Returns (merged_collection, merged_environments, chunks_processed).
+    """
+    chunks = split_xml_into_chunks(xml_content, CHUNK_SIZE_LINES)
+    total = len(chunks)
+    print(f"XML has {len(xml_content.splitlines())} lines — splitting into {total} chunk(s)")
+
+    all_collections: list[dict] = []
+    all_env_lists: list[list[dict]] = []
+
+    for i, chunk in enumerate(chunks, 1):
+        print(f"  Processing chunk {i}/{total} ({len(chunk.splitlines())} lines)")
+        collection, environments = convert_with_openai(chunk, chunk_num=i, total_chunks=total)
+        all_collections.append(collection)
+        all_env_lists.append(environments)
+
+    merged_collection = merge_collections(all_collections)
+    merged_environments = merge_environments(all_env_lists)
+    return merged_collection, merged_environments, total
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -246,14 +378,15 @@ async def convert_xml_to_hoppscotch(
             detail="OPENAI_API_KEY is not configured.",
         )
     try:
-        collection, environments, truncated = convert_with_openai(xml_content)
+        collection, environments, chunks_processed = convert_with_chunking(xml_content)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"OpenAI API error: {str(e)}")
 
     return JSONResponse(content={
         "success": True,
         "mode": "openai",
-        "truncated": truncated,
+        "truncated": False,
+        "chunks_processed": chunks_processed,
         "collection": collection,
         "environments": environments,
     })
@@ -282,7 +415,7 @@ async def download_zip(
             detail="OPENAI_API_KEY is not configured.",
         )
     try:
-        collection, environments, truncated = convert_with_openai(xml_content)
+        collection, environments, _chunks = convert_with_chunking(xml_content)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"OpenAI API error: {str(e)}")
 
@@ -336,7 +469,7 @@ async def run_hopp_cli(
             detail="OPENAI_API_KEY is not configured.",
         )
     try:
-        collection, environments, _ = convert_with_openai(xml_content)
+        collection, environments, _chunks = convert_with_chunking(xml_content)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"OpenAI API error: {str(e)}")
 

@@ -66,7 +66,7 @@ export default function App() {
               <div className="spinner" />
               <div>
                 <p className="status-title">Converting via OpenAI…</p>
-                <p className="status-sub">Sending XML to GPT-4o and building Hoppscotch collection</p>
+                <p className="status-sub">Processing XML in 1000-line chunks and building Hoppscotch collection</p>
               </div>
             </div>
           )}
@@ -86,6 +86,7 @@ export default function App() {
               data={result.collection}
               environments={result.environments || []}
               truncated={result.truncated}
+              chunksProcessed={result.chunks_processed ?? 1}
               mode={result.mode}
               uploadedFile={uploadedFile}
               apiBase={API_BASE}
