@@ -133,3 +133,10 @@ The generated JSON follows the **Hoppscotch v2** format:
 - XML files larger than ~60,000 characters are automatically truncated to fit within OpenAI token limits. A warning badge will appear in the UI.
 - The default model is `gpt-4o`. You can change it via `OPENAI_MODEL` in `.env`.
 - The backend uses `response_format: { type: "json_object" }` to enforce valid JSON output.
+
+
+
+Token estimate: 7000–8000 tokens
+1,28,000 tokens - GPT can handle
+9,000 lines possible
+1200 lines only per chunk
