@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import zipfile
+from typing import Any
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -193,7 +194,7 @@ Return ONLY the JSON object with keys "collection" and "environments". No markdo
 CHUNK_SIZE_LINES = 1000
 
 
-def convert_with_openai(xml_content: str, chunk_num: int = 1, total_chunks: int = 1) -> tuple[dict, list[dict]]:
+def convert_with_openai(xml_content: str, chunk_num: int = 1, total_chunks: int = 1) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Call OpenAI to convert XML or a chunk of it. Returns (collection, environments)."""
     if total_chunks > 1:
         prompt = USER_PROMPT_CHUNK_TEMPLATE.format(
@@ -218,9 +219,9 @@ def convert_with_openai(xml_content: str, chunk_num: int = 1, total_chunks: int 
     print(f"AI Parser (chunk {chunk_num}/{total_chunks}) ->", raw[:300])
     raw = re.sub(r"^```(?:json)?\n?", "", raw)
     raw = re.sub(r"\n?```$", "", raw).strip()
-    parsed = json.loads(raw)
-    collection = parsed.get("collection", parsed)
-    environments = parsed.get("environments", [])
+    parsed: dict[str, Any] = json.loads(raw)
+    collection: dict[str, Any] = parsed.get("collection", parsed)
+    environments: list[dict[str, Any]] = parsed.get("environments", [])
     return collection, environments
 
 
@@ -284,7 +285,7 @@ def split_xml_into_chunks(xml_content: str, chunk_size: int = CHUNK_SIZE_LINES) 
     return chunks or [xml_content]
 
 
-def merge_collections(collections: list[dict]) -> dict:
+def merge_collections(collections: list[dict[str, Any]]) -> dict[str, Any]:
     """Merge multiple partial Hoppscotch collections into one by combining folders/requests."""
     if not collections:
         return {
@@ -295,9 +296,9 @@ def merge_collections(collections: list[dict]) -> dict:
             "auth": {"authType": "inherit", "authActive": True},
             "headers": [],
         }
-    base = dict(collections[0])
-    all_folders = list(base.get("folders", []))
-    all_requests = list(base.get("requests", []))
+    base: dict[str, Any] = dict(collections[0])
+    all_folders: list[dict[str, Any]] = list(base.get("folders", []))
+    all_requests: list[dict[str, Any]] = list(base.get("requests", []))
     for col in collections[1:]:
         all_folders.extend(col.get("folders", []))
         all_requests.extend(col.get("requests", []))
@@ -306,9 +307,9 @@ def merge_collections(collections: list[dict]) -> dict:
     return base
 
 
-def merge_environments(env_lists: list[list[dict]]) -> list[dict]:
+def merge_environments(env_lists: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
     """Deduplicate environments across chunks — first occurrence per name wins."""
-    seen: dict[str, dict] = {}
+    seen: dict[str, dict[str, Any]] = {}
     for env_list in env_lists:
         for env in env_list:
             name = env.get("name", "")
@@ -317,7 +318,7 @@ def merge_environments(env_lists: list[list[dict]]) -> list[dict]:
     return list(seen.values())
 
 
-def convert_with_chunking(xml_content: str) -> tuple[dict, list[dict], int]:
+def convert_with_chunking(xml_content: str) -> tuple[dict[str, Any], list[dict[str, Any]], int]:
     """Convert the full XML by splitting into ~1000-line chunks, processing each, then merging.
 
     Returns (merged_collection, merged_environments, chunks_processed).
@@ -326,8 +327,8 @@ def convert_with_chunking(xml_content: str) -> tuple[dict, list[dict], int]:
     total = len(chunks)
     print(f"XML has {len(xml_content.splitlines())} lines — splitting into {total} chunk(s)")
 
-    all_collections: list[dict] = []
-    all_env_lists: list[list[dict]] = []
+    all_collections: list[dict[str, Any]] = []
+    all_env_lists: list[list[dict[str, Any]]] = []
 
     for i, chunk in enumerate(chunks, 1):
         print(f"  Processing chunk {i}/{total} ({len(chunk.splitlines())} lines)")
@@ -343,7 +344,7 @@ def convert_with_chunking(xml_content: str) -> tuple[dict, list[dict], int]:
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict[str, Any]:
     return {
         "status": "ok",
         "openai_enabled": openai_client is not None,
@@ -351,15 +352,15 @@ async def health_check():
 
 
 @app.get("/modes")
-async def available_modes():
-    modes = ["openai"] if openai_client else []
+async def available_modes() -> dict[str, Any]:
+    modes: list[str] = ["openai"] if openai_client else []
     return {"modes": modes, "default": "openai"}
 
 
 @app.post("/convert")
 async def convert_xml_to_hoppscotch(
     file: UploadFile = File(...),
-):
+) -> JSONResponse:
     if not file.filename.endswith(".xml"):
         raise HTTPException(status_code=400, detail="Only .xml files are accepted.")
 
@@ -395,7 +396,7 @@ async def convert_xml_to_hoppscotch(
 @app.post("/download-zip")
 async def download_zip(
     file: UploadFile = File(...),
-):
+) -> StreamingResponse:
     """Convert XML and return a ZIP containing collection.json + environment JSON files."""
     if not file.filename.endswith(".xml"):
         raise HTTPException(status_code=400, detail="Only .xml files are accepted.")
@@ -449,7 +450,7 @@ async def download_zip(
 async def run_hopp_cli(
     file: UploadFile = File(...),
     env_index: int = Query(default=0, description="Index of environment to use (0-based)"),
-):
+) -> JSONResponse:
     """Run Hoppscotch CLI (hopp test) against the converted collection."""
     if not file.filename.endswith(".xml"):
         raise HTTPException(status_code=400, detail="Only .xml files are accepted.")
