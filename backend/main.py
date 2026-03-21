@@ -2,9 +2,6 @@ import os
 import io
 import json
 import re
-import shutil
-import subprocess
-import tempfile
 import zipfile
 from typing import Any
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Body
@@ -444,85 +441,6 @@ async def download_zip(
             "Content-Disposition": f'attachment; filename="{safe_name}.zip"',
         },
     )
-
-
-@app.post("/run-cli")
-async def run_hopp_cli(
-    file: UploadFile = File(...),
-    env_index: int = Query(default=0, description="Index of environment to use (0-based)"),
-) -> JSONResponse:
-    """Run Hoppscotch CLI (hopp test) against the converted collection."""
-    if not file.filename.endswith(".xml"):
-        raise HTTPException(status_code=400, detail="Only .xml files are accepted.")
-
-    try:
-        content = await file.read()
-        xml_content = content.decode("utf-8")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to read file: {str(e)}")
-
-    if not xml_content.strip():
-        raise HTTPException(status_code=400, detail="Uploaded XML file is empty.")
-
-    if not openai_client:
-        raise HTTPException(
-            status_code=400,
-            detail="OPENAI_API_KEY is not configured.",
-        )
-    try:
-        collection, environments, _chunks = convert_with_chunking(xml_content)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"OpenAI API error: {str(e)}")
-
-    # Check that hopp CLI is available
-    hopp_cmd = shutil.which("hopp")
-    if not hopp_cmd:
-        raise HTTPException(
-            status_code=500,
-            detail="Hoppscotch CLI (hopp) not found. Run: npm install -g @hoppscotch/cli",
-        )
-
-    tmp_dir = tempfile.mkdtemp(prefix="hopp_cli_")
-    try:
-        # Write collection file (hopp expects an array)
-        collection_path = os.path.join(tmp_dir, "collection.json")
-        with open(collection_path, "w", encoding="utf-8") as f:
-            json.dump([collection], f, indent=2)
-
-        # Build hopp test command
-        cmd = [hopp_cmd, "test", collection_path]
-
-        # Write environment file if available
-        if environments and 0 <= env_index < len(environments):
-            env_path = os.path.join(tmp_dir, "environment.json")
-            with open(env_path, "w", encoding="utf-8") as f:
-                json.dump(environments[env_index], f, indent=2)
-            cmd.extend(["-e", env_path])
-
-        # Run hopp test
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=120,
-            cwd=tmp_dir,
-        )
-
-        return JSONResponse(content={
-            "success": result.returncode == 0,
-            "exit_code": result.returncode,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "command": " ".join(cmd),
-            "environment_used": environments[env_index]["name"] if environments and 0 <= env_index < len(environments) else None,
-        })
-
-    except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=504, detail="CLI execution timed out (120s limit).")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"CLI execution failed: {str(e)}")
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":
